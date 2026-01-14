@@ -22,7 +22,12 @@ public class TheDarkWest : ModuleRules
 			"GameplayAbilities",
 			"GameplayTasks",
 			"GameplayStateTreeModule",
-			"StateTreeModule",
+			"StateTreeModule"
+		});
+		
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"Chooser",
 		});
 	}
 }

@@ -38,6 +38,18 @@ void UTDWAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, 
 			MovementComponent->MaxWalkSpeed = NewValue * 10;
 		}
 	}
+	
+	if (Attribute == GetHealthAttribute())
+	{
+		if (NewValue <= 0.f && OldValue > 0.f)
+		{
+			ATDWCharacter* Character = GetTDWCharacter();
+			if (IsValid(Character))
+			{
+				Character->Die();
+			}
+		}
+	}
 }
 
 UCharacterMovementComponent* UTDWAttributeSet::GetCharacterMovementComponent() const

@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/TDWAttributeSet.h"
 #include "Character/Components/TDWMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Helpers/TDWMathLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -45,7 +46,6 @@ void ATDWCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	RotateToTarget(DeltaTime);
-	UpdateLookAtPosition(DeltaTime);
 }
 
 void ATDWCharacter::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
@@ -101,6 +101,21 @@ ETeamAttitude::Type ATDWCharacter::GetTeamAttitudeTowards(const AActor& Other) c
 		: ETeamAttitude::Neutral;
 }
 
+bool ATDWCharacter::IsDead()
+{
+	return bIsDead;
+}
+
+bool ATDWCharacter::HasAbilitySystemComponent()
+{
+	return true;
+}
+
+UAbilitySystemComponent* ATDWCharacter::GetAbilitySystemComponent()
+{
+	return AbilitySystemComponent;
+}
+
 void ATDWCharacter::InitAbilityActorInfo()
 {
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
@@ -145,13 +160,30 @@ void ATDWCharacter::RotateToTarget(const float& DeltaTime)
 	SetActorRotation(Result);
 }
 
-void ATDWCharacter::UpdateLookAtPosition(const float& DeltaTime)
+void ATDWCharacter::Die()
 {
-	const FVector TargetDirection = (CurrentLookAtLocation - GetActorLocation()).GetSafeNormal2D();
-	const FVector ForwardDirection = GetMesh()->GetBoneTransform("root", RTS_World).GetUnitAxis(EAxis::X);
-	constexpr float RootOffset = -90;
+	if (bIsDead)
+	{
+		return;
+	}
+	
+	bIsDead = true;
+	
+	//Implement death logic such as playing animation, calling delegates to disable inputs and AI, etc.
 
-	const float NewAngle = UTDWMathLibrary::WrapToRange(FMath::RadiansToDegrees(FMath::Atan2(TargetDirection.Y, TargetDirection.X) - FMath::Atan2(ForwardDirection.Y, ForwardDirection.X)) + RootOffset, -180, 180);
-	//CurrentAnimLookAtYawRotation = FMath::Clamp(NewAngle, -LookAtMaxYawRotation, LookAtMaxYawRotation);
-	// TODO: Do we need that? Only use if we are planning to animate the head or upper body to look at target
+	if (USkeletalMeshComponent* MeshComp = GetMesh(); IsValid(MeshComp))
+	{
+		MeshComp->SetSimulatePhysics(true);
+	}
+
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent(); IsValid(CapsuleComp))
+	{
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CapsuleComp->SetActive(false);
+	}
+	
+	if (TDWMovementComponent)
+	{
+		TDWMovementComponent->DisableMovement();
+	}
 }

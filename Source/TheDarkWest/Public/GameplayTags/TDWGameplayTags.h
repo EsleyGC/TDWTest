@@ -17,5 +17,25 @@ namespace TDWGameplayTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Action_Combat_Healing);
 	
+	/*
+	 * Status Tags
+	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Dead);
+
+	/**
+	 * Set ByCaller Tags
+	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_DamageAmount);
+	
+	/** 
+	 * Events Tags
+	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Events_Combat_AttackHitBoxCheck);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Events_Combat_Healing);
+
+	/**
+	 * GameplayCues
+	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Combat_HitReceive);
 	
 }

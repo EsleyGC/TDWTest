@@ -11,3 +11,18 @@ enum class ECardinalDirection : uint8
 	Left			UMETA(DisplayName = "Left"),
 	Right			UMETA(DisplayName = "Right"),
 };
+
+/** Struct to hold hit reaction data including direction and, in the future, type of hit reaction */
+USTRUCT(Blueprintable, BlueprintType)
+struct FTDWHitReactionData
+{
+	GENERATED_BODY()
+	
+	FTDWHitReactionData(){};
+	FTDWHitReactionData(const ECardinalDirection InHitDirection)
+	: HitDirection(InHitDirection)	
+	{	}
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ECardinalDirection HitDirection {ECardinalDirection::Forward};
+};

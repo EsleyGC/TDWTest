@@ -9,6 +9,7 @@
 #include "Navigation/CrowdAgentInterface.h"
 #include "AbilitySystemInterface.h"
 #include "ActiveGameplayEffectHandle.h"
+#include "Combat/TDWDamageableInterface.h"
 #include "TDWCharacter.generated.h"
 
 class UGameplayEffect;
@@ -16,7 +17,8 @@ class UTDWAttributeSet;
 class UTDWMovementComponent;
 
 UCLASS()
-class THEDARKWEST_API ATDWCharacter : public ACharacter, public IAbilitySystemInterface, public IGameplayTagAssetInterface, public ICrowdAgentInterface, public IGenericTeamAgentInterface
+class THEDARKWEST_API ATDWCharacter : public ACharacter, 
+public IAbilitySystemInterface, public IGameplayTagAssetInterface, public ICrowdAgentInterface, public IGenericTeamAgentInterface, public ITDWDamageableInterface
 {
 	GENERATED_BODY()
 
@@ -48,6 +50,12 @@ public:
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 	// -----------------------------------------------
 	
+	// ----- ITDWDamageableInterface Methods ------
+	virtual bool IsDead() override;
+	virtual bool HasAbilitySystemComponent() override;
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() override;
+	// -----------------------------------------------
+	
 	virtual void InitAbilityActorInfo();
 	
 	/** Adds the initial gameplay effects containing the base attributes and abilities to the character */
@@ -55,11 +63,16 @@ public:
 	
 	FActiveGameplayEffectHandle ApplyEffectToSelf(TSubclassOf<UGameplayEffect> GameplayEffectClass, float Level = 1.0f) const;
 	
+	UTDWAttributeSet* GetAttributeSet() const { return BaseAttributeSet; }
+	
 	virtual void SetLookAtLocation(const FVector& NewTargetPosition);
 	virtual FVector GetCurrentLookAtLocation() const { return CurrentLookAtLocation; }
 
+	/** Rotates the character to face the CurrentLookAtLocation */
 	void RotateToTarget(const float& DeltaTime);
-	void UpdateLookAtPosition(const float& DeltaTime);
+	
+	/** Character's death logic */
+	void Die();
 
 protected:
 	virtual void BeginPlay() override;
@@ -88,16 +101,29 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UTDWAttributeSet> BaseAttributeSet;
 
+	/** Defines the team ID for this character 
+	 * This will be used for team-based logic, such as AI behavior and damage application
+	 */
 	UPROPERTY(EditAnywhere, Category="TDW|Team")
 	FGenericTeamId TeamId;
 	
+	/** Current location the character is looking at 
+	 * Either set by AI or player input (mouse cursor location in the world)
+	 */
 	UPROPERTY(BlueprintReadOnly, Category = "TDW|Rotation")
 	FVector CurrentLookAtLocation;
 	
+	/** Initial gameplay effects to apply to the character on BeginPlay */
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "TDW|Attributes")
 	TArray<TSubclassOf<UGameplayEffect>> InitialGameplayEffects;
 	
+	/** How fast the character rotates to face the look at location */
 	UPROPERTY(EditAnywhere, Category = "TDW|Rotation")
 	float CurrentRotationSpeed = 6.0f;
+	
+private:
+	
+	/** Flag indicating if the character is dead */
+	bool bIsDead;
 	
 };

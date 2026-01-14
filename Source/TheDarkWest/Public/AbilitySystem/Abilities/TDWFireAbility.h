@@ -44,7 +44,7 @@ protected:
 	TSubclassOf<AActor> ProjectileClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TDW|Projectile")
-	FName SpawnSockedName = "hand_r";
+	FName SpawnSocketName = "hand_r";
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TDW|Projectile")
 	FVector ProjectileSpawnOffset = FVector::ZeroVector;
