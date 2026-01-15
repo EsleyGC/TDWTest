@@ -96,6 +96,16 @@ void UTDWMeleeAbility::ApplyImpactEffect(ITDWDamageableInterface* DamageableInte
 		DamageableInterface->ApplyDamageToNonAbilitySystemActor(DamageOnNoAbilitySystem);
 		return;
 	}
+	
+	if (!DamageableInterface)
+	{
+		return;
+	}
+	
+	if (DamageableInterface->IsDead() || !DamageableInterface->CanBeDamaged(GetAvatarActorFromActorInfo()))
+	{
+		return;
+	}
 
 	UAbilitySystemComponent* AbilitySystemComponent = DamageableInterface->GetAbilitySystemComponent();
 	if (!IsValid(AbilitySystemComponent))
@@ -107,12 +117,14 @@ void UTDWMeleeAbility::ApplyImpactEffect(ITDWDamageableInterface* DamageableInte
 	{
 		return;
 	}
-
+	
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	const FVector Origin = AvatarActor->GetActorLocation();
+	DamageableInterface->NotifyDamageTaken(DamageAmount, AvatarActor, Origin);
 	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(AvatarActor);
 	EffectContext.AddInstigator(AvatarActor, AvatarActor);
-	EffectContext.AddOrigin(AvatarActor->GetActorLocation());
+	EffectContext.AddOrigin(Origin);
 
 	FGameplayEffectSpec Spec(ImpactGameplayEffectClass->GetDefaultObject<UGameplayEffect>(), EffectContext, 1.0f);
 	Spec.SetSetByCallerMagnitude(TDWGameplayTags::Damage_DamageAmount, -DamageAmount); //Apply the damage amount from the payload

@@ -7,22 +7,20 @@
 #include "AbilitySystem/TDWAttributeSet.h"
 #include "Character/Components/TDWMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Engine/DamageEvents.h"
 #include "Helpers/TDWMathLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Perception/AISense_Damage.h"
 
 
 ATDWCharacter::ATDWCharacter(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UTDWMovementComponent>(CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
-	AbilitySystemComponent->SetIsReplicated(true);
-
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	BaseAttributeSet = CreateDefaultSubobject<UTDWAttributeSet>(TEXT("AttributeSet"));
 	TDWMovementComponent = Cast<UTDWMovementComponent>(GetCharacterMovement());
-
-	BaseAttributeSet = CreateDefaultSubobject<UTDWAttributeSet>("AttributeSet");
 }
 
 UAbilitySystemComponent* ATDWCharacter::GetAbilitySystemComponent() const
@@ -106,6 +104,19 @@ bool ATDWCharacter::IsDead()
 	return bIsDead;
 }
 
+bool ATDWCharacter::CanBeDamaged(const AActor* DamageInstigator)
+{
+	if (!IsValid(DamageInstigator))
+	{
+		// Unknown instigator, allow damage by default
+		return true;
+	}
+	
+	// Prevent friendly fire based on team attitude
+	const ETeamAttitude::Type Attitude = GetTeamAttitudeTowards(*DamageInstigator);
+	return Attitude == ETeamAttitude::Hostile;
+}
+
 bool ATDWCharacter::HasAbilitySystemComponent()
 {
 	return true;
@@ -114,6 +125,48 @@ bool ATDWCharacter::HasAbilitySystemComponent()
 UAbilitySystemComponent* ATDWCharacter::GetAbilitySystemComponent()
 {
 	return AbilitySystemComponent;
+}
+
+void ATDWCharacter::NotifyDamageTaken(float DamageAmount, AActor* DamageInstigator, const FVector Origin)
+{
+	UAISense_Damage::ReportDamageEvent(GetWorld(), this, DamageInstigator, DamageAmount, Origin, GetActorLocation());
+}
+
+UAISense_Sight::EVisibilityResult ATDWCharacter::CanBeSeenFrom(const FCanBeSeenFromContext& Context, FVector& OutSeenLocation, int32& OutNumberOfLoSChecksPerformed, int32& OutNumberOfAsyncLosCheckRequested, float& OutSightStrength, int32* UserData, const FOnPendingVisibilityQueryProcessedDelegate* Delegate)
+{
+	if (bIsDead)
+	{
+		return UAISense_Sight::EVisibilityResult::NotVisible;
+	}
+	
+	// Here, we replicate the Sync check from the Sight sensor
+	const FVector TargetLocation = GetActorLocation();
+	FHitResult HitResult;
+	const FCollisionQueryParams QueryParams = FCollisionQueryParams(SCENE_QUERY_STAT(AILineOfSight), true, Context.IgnoreActor);
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Context.ObserverLocation, TargetLocation, ECC_Visibility, QueryParams, FCollisionResponseParams::DefaultResponseParam);
+
+	++OutNumberOfLoSChecksPerformed;
+
+	if (IsTraceConsideredVisible(bHit ? &HitResult : nullptr, this))
+	{
+		OutSeenLocation = TargetLocation;
+		return UAISense_Sight::EVisibilityResult::Visible;
+	}
+	else
+	{
+		return UAISense_Sight::EVisibilityResult::NotVisible;
+	}
+}
+
+bool ATDWCharacter::IsTraceConsideredVisible(const FHitResult* HitResult, const AActor* TargetActor)
+{
+	if (HitResult == nullptr)
+	{
+		return true;
+	}
+
+	const AActor* HitResultActor = HitResult->HitObjectHandle.FetchActor();
+	return (HitResultActor ? HitResultActor->IsOwnedBy(TargetActor) : false);
 }
 
 void ATDWCharacter::InitAbilityActorInfo()
@@ -170,6 +223,11 @@ void ATDWCharacter::Die()
 	bIsDead = true;
 	
 	//Implement death logic such as playing animation, calling delegates to disable inputs and AI, etc.
+	
+	if (DeathGameplayEffectClass && DeathGameplayEffectClass.GetDefaultObject())
+	{
+		ApplyEffectToSelf(DeathGameplayEffectClass);
+	}
 
 	if (USkeletalMeshComponent* MeshComp = GetMesh(); IsValid(MeshComp))
 	{
@@ -179,11 +237,10 @@ void ATDWCharacter::Die()
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent(); IsValid(CapsuleComp))
 	{
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		CapsuleComp->SetActive(false);
 	}
 	
 	if (TDWMovementComponent)
 	{
-		TDWMovementComponent->DisableMovement();
+		TDWMovementComponent->SetActive(false);
 	}
 }

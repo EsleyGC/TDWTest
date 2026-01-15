@@ -7,6 +7,8 @@
 #include "Character/TDWCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+static TAutoConsoleVariable<bool> CVarTDWDebugAttributeSet(TEXT("TDW.GodMode"), false, TEXT("Enable God Mode for testing purposes."));
+
 void UTDWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
@@ -43,6 +45,11 @@ void UTDWAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, 
 	{
 		if (NewValue <= 0.f && OldValue > 0.f)
 		{
+			if (CVarTDWDebugAttributeSet.GetValueOnGameThread())
+			{
+				return;
+			}
+			
 			ATDWCharacter* Character = GetTDWCharacter();
 			if (IsValid(Character))
 			{

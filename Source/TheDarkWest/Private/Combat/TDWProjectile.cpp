@@ -29,10 +29,20 @@ void ATDWProjectile::InitializeProjectile(const FProjectilePayload& Payload)
 
 void ATDWProjectile::ApplyImpactEffect(ITDWDamageableInterface* DamageableInterface, float DamageAmount, float DamageOnNoAbilitySystem)
 {
+	if (!DamageableInterface)
+	{
+		return;
+	}
+	
 	const bool HasAbilitySystem = DamageableInterface->HasAbilitySystemComponent();
 	if (!HasAbilitySystem)
 	{
 		DamageableInterface->ApplyDamageToNonAbilitySystemActor(DamageOnNoAbilitySystem);
+		return;
+	}
+	
+	if (DamageableInterface->IsDead() || !DamageableInterface->CanBeDamaged(ProjectilePayload.InstigatorActor))
+	{
 		return;
 	}
 
@@ -47,9 +57,13 @@ void ATDWProjectile::ApplyImpactEffect(ITDWDamageableInterface* DamageableInterf
 		return;
 	}
 
+	AActor* InstigatorActor = ProjectilePayload.InstigatorActor;
+	const FVector Origin = ProjectilePayload.Origin;
+	DamageableInterface->NotifyDamageTaken(DamageAmount, InstigatorActor, Origin);
+	
 	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(this);
-	EffectContext.AddInstigator(ProjectilePayload.InstigatorActor, this /*This could be the weapon*/);
+	EffectContext.AddInstigator(InstigatorActor, this /*This could be the weapon*/);
 	EffectContext.AddOrigin(ProjectilePayload.Origin);
 
 	FGameplayEffectSpec Spec(ImpactGameplayEffectClass->GetDefaultObject<UGameplayEffect>(), EffectContext, 1.0f);

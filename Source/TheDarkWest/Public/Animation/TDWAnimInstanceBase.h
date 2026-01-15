@@ -28,6 +28,7 @@ public:
 	void UpdateIsMoving(const float DeltaSeconds);
 	void UpdateLookAt(float DeltaSeconds);
 	void UpdateCurrentDirectionAngle();
+	void UpdateCombatStance();
 
 	bool ShouldChangeCardinalDirection() const;
 	ECardinalDirection SelectNewCardinalDirection() const;
@@ -99,6 +100,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category= "TDW|IsMoving")
 	bool bIsMoving;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category= "TDW|Combat")
+	bool bIsInCombat;
 	
 private:
 	UPROPERTY()

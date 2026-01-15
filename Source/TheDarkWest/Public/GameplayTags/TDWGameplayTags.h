@@ -20,7 +20,11 @@ namespace TDWGameplayTags
 	/*
 	 * Status Tags
 	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Idle);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Combat);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Dead);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Inspired);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_HealCooldown);
 
 	/**
 	 * Set ByCaller Tags
@@ -37,5 +41,12 @@ namespace TDWGameplayTags
 	 * GameplayCues
 	 */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Combat_HitReceive);
+	
+	/*
+	 * AI Types
+	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CharacterType_Player);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CharacterType_AI_Melee);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CharacterType_AI_Ranged);
 	
 }

@@ -34,6 +34,7 @@ void UTDWAnimInstanceBase::NativeUpdateAnimation(float DeltaSeconds)
 	UpdateIsMoving(DeltaSeconds);
 	UpdateLookAt(DeltaSeconds);
 	UpdateCurrentDirectionAngle();
+	UpdateCombatStance();
 	
 	if (ShouldChangeCardinalDirection())
 	{
@@ -107,6 +108,11 @@ void UTDWAnimInstanceBase::UpdateCurrentDirectionAngle()
 
 	const float FinalDirectionAngle = AngleDegrees * Sign;
 	CurrentDirectionAngle = FinalDirectionAngle;
+}
+
+void UTDWAnimInstanceBase::UpdateCombatStance()
+{
+	bIsInCombat = TDWCharacter->HasMatchingGameplayTag(TDWGameplayTags::Status_Combat);
 }
 
 bool UTDWAnimInstanceBase::ShouldChangeCardinalDirection() const
