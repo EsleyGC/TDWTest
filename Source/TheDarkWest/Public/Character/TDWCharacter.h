@@ -10,10 +10,13 @@
 #include "AbilitySystemInterface.h"
 #include "ActiveGameplayEffectHandle.h"
 #include "Combat/TDWDamageableInterface.h"
+#include "Components/WidgetComponent.h"
 #include "GameplayTags/TDWGameplayTags.h"
 #include "Perception/AISightTargetInterface.h"
 #include "TDWCharacter.generated.h"
 
+struct FOnAttributeChangeData;
+class UTDWAbilityWidget;
 class UGameplayEffect;
 class UTDWAttributeSet;
 class UTDWMovementComponent;
@@ -66,7 +69,11 @@ public:
 	// -----------------------------------------------
 	
 	bool IsTraceConsideredVisible(const FHitResult* HitResult, const AActor* TargetActor);
-
+	
+	UFUNCTION(BlueprintPure, Category = "TDW|Ability System Component")
+	UAbilitySystemComponent* GetASC() const { return AbilitySystemComponent; }
+	
+	/** Initializes the Ability System Component and sets up the actor info */
 	virtual void InitAbilityActorInfo();
 	
 	/** Adds the initial gameplay effects containing the base attributes and abilities to the character */
@@ -86,9 +93,12 @@ public:
 	
 	/** Character's death logic */
 	void Die();
+	
+	void OnHealthChanged(const FOnAttributeChangeData& Data);
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -102,6 +112,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "TDW|Components")
 	TObjectPtr<UTDWMovementComponent> TDWMovementComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "TDW|Components")
+	TObjectPtr<UWidgetComponent> WidgetComponent;
 	
 	//----------------------------------------------------------------------------
 	
@@ -140,8 +153,12 @@ protected:
 	/** How fast the character rotates to face the look at location */
 	UPROPERTY(EditAnywhere, Category = "TDW|Rotation")
 	float CurrentRotationSpeed = 6.0f;
+
 	
 private:
+	
+	UPROPERTY()
+	TObjectPtr<UTDWAbilityWidget> TDWAbilityWidget;
 	
 	/** Flag indicating if the character is dead */
 	bool bIsDead;

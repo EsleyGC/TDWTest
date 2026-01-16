@@ -7,11 +7,9 @@
 #include "AbilitySystem/TDWAttributeSet.h"
 #include "Character/Components/TDWMovementComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Engine/DamageEvents.h"
-#include "Helpers/TDWMathLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Perception/AISense_Damage.h"
+#include "UI/TDWAbilityWidget.h"
 
 
 ATDWCharacter::ATDWCharacter(const FObjectInitializer& ObjectInitializer) 
@@ -21,6 +19,9 @@ ATDWCharacter::ATDWCharacter(const FObjectInitializer& ObjectInitializer)
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	BaseAttributeSet = CreateDefaultSubobject<UTDWAttributeSet>(TEXT("AttributeSet"));
 	TDWMovementComponent = Cast<UTDWMovementComponent>(GetCharacterMovement());
+	
+	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
+	WidgetComponent->SetupAttachment(GetRootComponent());
 }
 
 UAbilitySystemComponent* ATDWCharacter::GetAbilitySystemComponent() const
@@ -37,6 +38,25 @@ void ATDWCharacter::BeginPlay()
 	const FVector CurrentForward = GetActorForwardVector();
 	const FVector LookAtLocation = CurrentLocation + (CurrentForward * 100.0f);
 	SetLookAtLocation(LookAtLocation);
+
+	TDWAbilityWidget = Cast<UTDWAbilityWidget>(WidgetComponent->GetUserWidgetObject());
+	if (TDWAbilityWidget)
+	{
+		TDWAbilityWidget->InitASC(AbilitySystemComponent);
+		const float MaxHealth = BaseAttributeSet->GetMaxHealth();
+
+		TDWAbilityWidget->OnHealthChanged(MaxHealth, MaxHealth);
+		
+	}
+	
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UTDWAttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
+}
+
+void ATDWCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UTDWAttributeSet::GetHealthAttribute()).RemoveAll(this);
 }
 
 void ATDWCharacter::Tick(float DeltaTime)
@@ -242,5 +262,16 @@ void ATDWCharacter::Die()
 	if (TDWMovementComponent)
 	{
 		TDWMovementComponent->SetActive(false);
+	}
+}
+
+void ATDWCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (TDWAbilityWidget)
+	{
+		const float CurrentHealth = bIsDead ? 0 : Data.NewValue;
+		const float MaxHealth = bIsDead ? 0 : BaseAttributeSet->GetMaxHealth();
+
+		TDWAbilityWidget->OnHealthChanged(CurrentHealth, MaxHealth);
 	}
 }

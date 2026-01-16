@@ -115,13 +115,6 @@ EStateTreeRunStatus FStateTreeLookAroundTask::Tick(FStateTreeExecutionContext& C
 		const float NormalizedTime = FMath::Clamp(ElapsedTime / InstanceData.FirstLookAtSmoothingTime, 0.0f, 1.0f);
 		AngleOffset = FMath::Lerp(0, TargetAngleOffset, NormalizedTime);
 	}
-
-	if (CVarStateTreeDebugLookAroundEnable.GetValueOnGameThread())
-	{
-		UKismetSystemLibrary::PrintString(InstanceData.AIController, FString::Printf(TEXT(
-			"SineValue: %f, PerlinNoiseValue: %f, CombinedValue: %f, AngleOffset: %f (%f)"),
-			SineValue, PerlinNoiseValue, CombinedValue, AngleOffset, TargetAngleOffset), true, true, FColor::Cyan, 100.f, TEXT("LookAroundDebug"));
-	}
 	
 	const FRotator RotationOffset(0.0f, AngleOffset, 0.0f);
 	FVector LookDirection;

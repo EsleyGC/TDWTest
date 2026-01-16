@@ -22,7 +22,10 @@ public class TheDarkWest : ModuleRules
 			"GameplayAbilities",
 			"GameplayTasks",
 			"GameplayStateTreeModule",
-			"StateTreeModule"
+			"StateTreeModule",
+			"UMG",
+			"Slate",
+			"SlateCore",
 		});
 		
 		PrivateDependencyModuleNames.AddRange(new string[]

@@ -7,8 +7,10 @@
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "AbilitySystem/TDWAttributeSet.h"
 #include "Character/TDWCharacter.h"
 #include "Navigation/CrowdManager.h"
+#include "UI/TDWAbilityWidget.h"
 
 DEFINE_LOG_CATEGORY(TDWLogPlayerController);
 
@@ -17,6 +19,25 @@ void ATDWPlayerController::BeginPlay()
 	Super::BeginPlay();
 	SetupInput();
 	TDWCharacter = Cast<ATDWCharacter>(GetPawn());
+	
+	if (PlayerHUDClass)
+	{
+		AbilityWidget = CreateWidget<UTDWAbilityWidget>(this, PlayerHUDClass);
+		if (AbilityWidget)
+		{
+			AbilityWidget->AddToViewport();
+			AbilityWidget->InitASC(TDWCharacter ? TDWCharacter->GetAbilitySystemComponent() : nullptr);			
+		}
+	}
+	
+	TDWCharacter->GetAbilitySystemComponent()->GetGameplayAttributeValueChangeDelegate(UTDWAttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
+}
+
+void ATDWPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	TDWCharacter->GetAbilitySystemComponent()->GetGameplayAttributeValueChangeDelegate(UTDWAttributeSet::GetHealthAttribute()).RemoveAll(this);
 }
 
 void ATDWPlayerController::SetupInput() const
@@ -160,4 +181,14 @@ void ATDWPlayerController::MoveInput(const FInputActionValue& InputActionValue)
 	//Simple north/east/south/west movement, since the camera is fixed we can just map X to Y and Y to X
 	const FVector InputAxisVector = InputActionValue.Get<FVector>();
 	return TDWCharacter->AddMovementInput(FVector(InputAxisVector.Y, InputAxisVector.X, 0));
+}
+
+void ATDWPlayerController::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (AbilityWidget)
+	{
+		const UTDWAttributeSet* BaseAttributeSet = TDWCharacter->GetAttributeSet();
+		const float MaxHealth = BaseAttributeSet->GetMaxHealth();
+		AbilityWidget->OnHealthChanged(Data.NewValue, MaxHealth);
+	}
 }

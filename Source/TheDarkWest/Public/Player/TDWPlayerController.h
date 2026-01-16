@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "TDWPlayerController.generated.h"
 
+struct FOnAttributeChangeData;
+class UTDWAbilityWidget;
 class ATDWCharacter;
 class UInputAction;
 class UInputMappingContext;
@@ -25,6 +27,7 @@ class THEDARKWEST_API ATDWPlayerController : public APlayerController
 public:
 	
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void SetupInput() const;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -40,6 +43,9 @@ public:
 	
 	UFUNCTION()
 	void MoveInput(const FInputActionValue& InputActionValue);
+	
+	
+	void OnHealthChanged(const FOnAttributeChangeData& Data);
 	
 protected:
 	
@@ -58,4 +64,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SecondaryAction;
+	
+	UPROPERTY(EditAnywhere, Category="HUD")
+	TSubclassOf<UTDWAbilityWidget> PlayerHUDClass;
+	
+	UPROPERTY(VisibleAnywhere, Category="HUD")
+	TObjectPtr<UTDWAbilityWidget> AbilityWidget;
 };
